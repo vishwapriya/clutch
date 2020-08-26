@@ -100,7 +100,7 @@ func (fs *experimentStore) DeleteExperiments(ctx context.Context, ids []uint64) 
 		// TODO: This API will be renamed to StopExperiment and will take a single ID as a parameter
 		return errors.New("A single ID must be provided")
 	}
-	sql := `DELETE FROM experiment_run WHERE id == $1`
+	sql := `DELETE FROM experiment_run WHERE id = $1`
 	_, err := fs.db.ExecContext(ctx, sql, ids[0])
 	return err
 }

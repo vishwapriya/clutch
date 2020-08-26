@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { clutch as IClutch } from "@clutch-sh/api";
-import { ButtonGroup, client, Error, Row, Table } from "@clutch-sh/core";
+import { Button, ButtonGroup, client, Error, Row, Table } from "@clutch-sh/core";
 import { Container } from "@material-ui/core";
 import styled from "styled-components";
 
@@ -9,6 +9,12 @@ interface ExperimentationDataProps {
   experiment: IClutch.chaos.experimentation.v1.Experiment;
   columns: string[];
   experimentTypes: any;
+}
+
+function stopExperiment(id) {
+  return client.post("/v1/experiments/delete", {
+    ids: [id],
+  });
 }
 
 const ExperimentData: React.FC<ExperimentationDataProps> = ({
@@ -31,9 +37,10 @@ const ExperimentData: React.FC<ExperimentationDataProps> = ({
   const model = mapperExists ? registeredExperimentType.mapping(experiment.config) : experiment;
 
   const data = columns.map(column => {
-    let value: string;
+    let value: Element;
     if (column === "identifier") {
-      value = experiment.id.toString();
+      // TODO(bgallagher) correct type for value
+      value = <Button text="Stop" onClick={() => stopExperiment(experiment.id)} />;
     } else if (Object.prototype.hasOwnProperty.call(model, column)) {
       value = model[column];
     }
