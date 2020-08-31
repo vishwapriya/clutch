@@ -82,7 +82,7 @@ func (fs *experimentStore) CreateExperiments(ctx context.Context, experiments []
 		        experiment_config_id,
 		        execution_time,
 		        creation_time)
-            VALUES ($1, $2, tstzrange(NOW(), NULL), NOW())`
+            VALUES ($1, $2, tstzrange(NOW(), NULL, '[]'), NOW())`
 
 		runId := id.NewID()
 		_, err = fs.db.ExecContext(ctx, runSql, runId, configID)
@@ -102,10 +102,14 @@ func (fs *experimentStore) CreateExperiments(ctx context.Context, experiments []
 
 func (fs *experimentStore) StopExperiments(ctx context.Context, ids []uint64) error {
 	if len(ids) != 1 {
-		// TODO: This API will be renamed to StopExperiment and will take a single ID as a parameter
+		// TODO: This API will be changed to take a single ID as a parameter
 		return errors.New("A single ID must be provided")
 	}
-	sql := `DELETE FROM experiment_run WHERE id == $1`
+	sql :=
+		`UPDATE experiment_run 
+         SET execution_time = tstzrange(lower(execution_time), NOW(), '[]') 
+         WHERE id == $1`
+
 	_, err := fs.db.ExecContext(ctx, sql, ids[0])
 	return err
 }
@@ -114,7 +118,8 @@ func (fs *experimentStore) StopExperiments(ctx context.Context, ids []uint64) er
 func (fs *experimentStore) GetExperiments(ctx context.Context) ([]*experimentation.Experiment, error) {
 	sql := `
         SELECT experiment_run.id, details FROM experiment_config, experiment_run
-        WHERE experiment_config.id = experiment_run.experiment_config_id`
+        WHERE experiment_config.id = experiment_run.experiment_config_id
+        AND NOW() <@ experiment_run.execution_time`
 
 	rows, err := fs.db.QueryContext(ctx, sql)
 	if err != nil {
