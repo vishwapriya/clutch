@@ -110,7 +110,7 @@ func (fs *experimentStore) StopExperiments(ctx context.Context, ids []uint64) er
 	sql :=
 		`UPDATE experiment_run 
          SET execution_time = tstzrange(lower(execution_time), NOW(), '[]') 
-         WHERE id == $1`
+         WHERE id = $1`
 
 	_, err := fs.db.ExecContext(ctx, sql, ids[0])
 	return err
@@ -120,8 +120,7 @@ func (fs *experimentStore) StopExperiments(ctx context.Context, ids []uint64) er
 func (fs *experimentStore) GetExperiments(ctx context.Context) ([]*experimentation.Experiment, error) {
 	sql := `
         SELECT experiment_run.id, details FROM experiment_config, experiment_run
-        WHERE experiment_config.id = experiment_run.experiment_config_id
-        AND NOW() <@ experiment_run.execution_time`
+        WHERE experiment_config.id = experiment_run.experiment_config_id`
 
 	rows, err := fs.db.QueryContext(ctx, sql)
 	if err != nil {
